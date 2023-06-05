@@ -17,12 +17,7 @@
     "jsx": "react-jsx",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "types": [
-      "reflect-metadata",
-      "node",
-      "jest",
-      "@testing-library/jest-dom"
-    ]
+    "types": ["reflect-metadata", "node", "jest", "@testing-library/jest-dom"]
   },
   "include": ["./src"]
 }

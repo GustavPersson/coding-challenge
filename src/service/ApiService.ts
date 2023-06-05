@@ -1,11 +1,13 @@
 import { injectable } from "inversify";
-import mockData from "./mockData.json";
+import mockData from "./mockData";
+
+export type Article = (typeof mockData.data)[number];
 
 export interface ApiResponseType {
   /**
    * Data returned in the response.
    */
-  data: any;
+  data: Array<Article>;
   /**
    * The responses status code (if applicable).
    */
@@ -13,13 +15,17 @@ export interface ApiResponseType {
 }
 
 export interface ApiServiceType {
-  get: () => Promise<ApiResponseType>;
+  get: () => Promise<Array<Article>>;
+  filtered: (
+    value: string,
+    param: "title" | "brand"
+  ) => Promise<Array<Article>>;
 }
 
 @injectable()
 export default class ApiService implements ApiServiceType {
   private static instance: ApiService;
-  
+
   static get initialized(): ApiService {
     if (!ApiService.instance) {
       this.instance = new ApiService();
@@ -27,18 +33,20 @@ export default class ApiService implements ApiServiceType {
     return this.instance;
   }
 
-  public get = async (): Promise<ApiResponseType> => {
-    return mockData;
-  }
+  public get: ApiServiceType["get"] = async () => {
+    const response = mockData;
+    if (response.status === 200) {
+      return response.data;
+    } else {
+      throw new Error("Unexpected error");
+    }
+  };
 
-  public filtered = async (value: string, param: string): Promise<ApiResponseType> => {
-    const response = await this.get();
-    const filteredData = response.data.filter((item: any) => {
+  public filtered: ApiServiceType["filtered"] = async (value, param) => {
+    const data = await this.get();
+    const filteredData = data.filter((item) => {
       return item[param].toLowerCase().includes(value.toLowerCase());
     });
-    return {
-      data: filteredData,
-      status: response.status,
-    };
-  }
+    return filteredData;
+  };
 }

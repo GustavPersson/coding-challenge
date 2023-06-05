@@ -1,11 +1,13 @@
 import { inject, injectable } from 'inversify';
-import { action, makeObservable, observable } from 'mobx';
-import ApiService from '../../service/ApiService';
+import { action, makeObservable, observable, runInAction } from "mobx";
+import ApiService, { ApiServiceType } from "../../service/ApiService";
+import type { FormatListType, FormattedList } from "../../service/FormatList";
+import { ChangeEventHandler } from "react";
 
-export type SearchType = {
+export interface SearchType {
   searchValue: string;
-  searchResults: Array<any>;
-  search: (value: string) => void;
+  searchResults: FormattedList;
+  search: (searchValue: string) => Promise<void>;
 }
 
 /**
@@ -13,26 +15,27 @@ export type SearchType = {
  */
 @injectable()
 export default class SearchViewModel implements SearchType {
-  public searchValue!: string;
-  public searchResults = [{}];
-  private apiService: any;
+  public searchValue = "";
+  public searchResults: FormattedList = [];
+  private apiService: ApiServiceType;
 
   constructor(
-    @inject('FORMAT_LIST_SERVICE') private formatListService: any,
+    @inject("FORMAT_LIST_SERVICE") private formatListService: FormatListType
   ) {
     this.apiService = new ApiService();
 
     makeObservable(this, {
-      searchValue: observable,
+      searchResults: observable,
       search: action,
     });
   }
 
-  public search = async (value: any) => {
-    this.searchValue = value;
-    const response = await this.apiService.get(this.searchValue);
-    response.data = this.formatListService.formatList(response.data);
+  public search = async (searchValue: string) => {
+    const response = await this.apiService.filtered(searchValue, "title");
+    const formattedResponse = this.formatListService.formatList(response);
 
-    return response;
+    runInAction(() => {
+      this.searchResults = formattedResponse;
+    });
   };
 }

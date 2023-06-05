@@ -1,90 +1,114 @@
-import { Avatar, Box, Button, Grid, List, ListItem, ListItemAvatar, ListItemText, Paper, Stack, TextField, Typography } from '@mui/material';
-import { Observer } from 'mobx-react-lite';
-import { ReactElement, useState } from 'react';
-import { appContainer } from '../../Composition/AppContainer';
-import { withInstances } from '../../utils/withInstances';
-import { SearchType } from './SearchViewModel';
-import ImageIcon from '@mui/icons-material/Image';
+import {
+  Avatar,
+  Box,
+  Button,
+  Grid,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  Stack,
+  TextField,
+  Typography,
+  Link,
+} from "@mui/material";
+import { Observer } from "mobx-react-lite";
+import { ChangeEventHandler, ReactElement, useEffect, useState } from "react";
+import ImageIcon from "@mui/icons-material/Image";
+import { SearchType } from "./SearchViewModel";
+import { action } from "mobx";
+import { Link as ReactRouterLink, useSearchParams } from "react-router-dom";
+import "./Search.css";
+import useContainer from "../../utils/useContainer";
 
-// class to style button component
-const ButtonStyle = {
-  backgroundColor: '#3f51b5',
-  color: '#fff',
-  '&:hover': {
-    backgroundColor: '#3f51b5',
-    color: '#fff',
-  },
-};
+function SearchResultsPage(): ReactElement {
+  const viewModel = useContainer<SearchType>("SEARCH_PAGE");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchValue, setSearchValue] = useState(
+    searchParams.get("query") || ""
+  );
+  const [isSearchPristine, setIsSearchPristine] = useState(true);
 
-function SearchResultsPage({ viewModel }:{ viewModel: SearchType | undefined }): ReactElement {
-  const [value, setValue] = useState<any>(viewModel?.searchValue);
-  const [results, setResults] = useState({ data: []});
-  
-  let model = appContainer.get<any>('SEARCH_PAGE');
-
-  function updateTextValue (e:any) {
-    setValue(model.searchValue = e.target.value);
-  }
-
-  const onSearch = async () => {
-    var resp = await model.search(value);
-    const newData = {
-      data: filteredData(resp, 'title', value),
-    }
-    setResults(newData);
+  const onChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    setSearchValue(event.target.value);
   };
 
-  var selected:boolean = false;
+  useEffect(() => {
+    if (searchParams.get("query")) {
+      viewModel.search(searchValue);
+      setIsSearchPristine(false);
+    }
+  }, []);
 
-  return <Observer>{() => <Box>
-    <Grid container spacing={2}>
-    <Grid item md={4}>
-
-    <Stack direction="row">
-
-    <TextField
-      id="outlined-basic"
-      label="Search for an article"
-      variant="outlined"
-      value={model.searchValue}
-      onChange={updateTextValue}
-    />
-    <Button style={ButtonStyle} sx={{ marginLeft: 2 }} variant="contained" onClick={onSearch}>Search</Button>
-    </Stack>
-    {selected && <Box marginTop={2}><Paper sx={{ padding: 2 }}>
-      <strong>Title</strong>
-      <p>description</p>
-      <p style={{ float: 'right'}}>price</p>
-      <div style={{ clear: 'both'}}></div>
-    </Paper></Box>}
-    </Grid>
-    <Grid item md={8}>
-
-      <Box alignItems="center" flexGrow={1}>
-        <Typography align="center" variant="h5">Search results</Typography>
-       </Box>
-      {!results && <Box>No results</Box>}
-      {<List>
-          {(results) && results.data.map((result: any) => (
-            <ListItem>
-               <ListItemAvatar>
-              <Avatar>
-                <ImageIcon />
-              </Avatar>
-            </ListItemAvatar>
-              <ListItemText primary={result.title} secondary={result.description} />
-            </ListItem>
-          ))}
-        </List>}
-      </Grid>
-    </Grid>
-    </Box>}</Observer>;
+  return (
+    <Observer>
+      {() => (
+        <Box>
+          <Grid container spacing={2}>
+            <Grid item md={4}>
+              <Stack direction="row">
+                <TextField
+                  id="outlined-basic"
+                  label="Search for an article"
+                  variant="outlined"
+                  value={searchValue}
+                  onChange={onChange}
+                />
+                <Button
+                  className="search-button"
+                  sx={{ marginLeft: 2 }}
+                  variant="contained"
+                  onClick={action(() => {
+                    setSearchParams({ query: searchValue });
+                    viewModel.search(searchValue);
+                    setIsSearchPristine(false);
+                  })}
+                >
+                  Search
+                </Button>
+              </Stack>
+            </Grid>
+            <Grid item md={8}>
+              <Box alignItems="center" flexGrow={1}>
+                <Typography align="center" variant="h5">
+                  Search results
+                </Typography>
+              </Box>
+              {!isSearchPristine &&
+                searchValue &&
+                viewModel.searchResults.length === 0 && <Box>No results</Box>}
+              <List>
+                {viewModel.searchResults &&
+                  viewModel.searchResults.map((result) => (
+                    <Link
+                      component={ReactRouterLink}
+                      to={`/article/${result.id}`}
+                      key={result.id}
+                    >
+                      <ListItem
+                        onClick={() => {
+                          console.log(result.id);
+                        }}
+                      >
+                        <ListItemAvatar>
+                          <Avatar>
+                            <ImageIcon />
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={result.title}
+                          secondary={result.description}
+                        />
+                      </ListItem>
+                    </Link>
+                  ))}
+              </List>
+            </Grid>
+          </Grid>
+        </Box>
+      )}
+    </Observer>
+  );
 }
 
-export default withInstances({ viewModel: 'SEARCH_PAGE' }, SearchResultsPage);
-
-function filteredData(response: any, param: string, value: string) {
-  return response.data.filter((item: any) => {
-    return item[param].toLowerCase().includes(value.toLowerCase());
-  });
-};
+export default SearchResultsPage;
