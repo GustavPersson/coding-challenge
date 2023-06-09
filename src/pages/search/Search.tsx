@@ -21,7 +21,11 @@ import { Link as ReactRouterLink, useSearchParams } from "react-router-dom";
 import "./Search.css";
 import useContainer from "../../utils/useContainer";
 
-function SearchResultsPage(): ReactElement {
+function SearchResultsPage({
+  setTitle,
+}: {
+  setTitle: (title: string) => void;
+}): ReactElement {
   const viewModel = useContainer<SearchType>("SEARCH_PAGE");
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchValue, setSearchValue] = useState(
@@ -32,6 +36,10 @@ function SearchResultsPage(): ReactElement {
   const onChange: ChangeEventHandler<HTMLInputElement> = (event) => {
     setSearchValue(event.target.value);
   };
+
+  useEffect(() => {
+    setTitle("Search");
+  }, []);
 
   useEffect(() => {
     if (searchParams.get("query")) {
@@ -55,6 +63,7 @@ function SearchResultsPage(): ReactElement {
                   onChange={onChange}
                 />
                 <Button
+                  data-testid="search"
                   className="search-button"
                   sx={{ marginLeft: 2 }}
                   variant="contained"
@@ -81,6 +90,7 @@ function SearchResultsPage(): ReactElement {
                 {viewModel.searchResults &&
                   viewModel.searchResults.map((result) => (
                     <Link
+                      data-testid="article-link"
                       component={ReactRouterLink}
                       to={`/article/${result.id}`}
                       key={result.id}

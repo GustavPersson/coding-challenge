@@ -16,6 +16,7 @@ export interface ApiResponseType {
 
 export interface ApiServiceType {
   get: () => Promise<Array<Article>>;
+  getById: (id: number) => Promise<Article>;
   filtered: (
     value: string,
     param: "title" | "brand"
@@ -39,6 +40,15 @@ export default class ApiService implements ApiServiceType {
       return response.data;
     } else {
       throw new Error("Unexpected error");
+    }
+  };
+
+  public getById: ApiServiceType["getById"] = async (id) => {
+    const response = mockData.data.find((o) => o.id === id);
+    if (response) {
+      return response;
+    } else {
+      throw new Error("Could not find article");
     }
   };
 

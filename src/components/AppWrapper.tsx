@@ -8,19 +8,10 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
-import getAddressTitle from "../utils/getTitle";
-import { useEffect, useState } from "react";
 
-function AppWrapper() {
-  const [title, setTitle] = useState<string | undefined>("Home");
-  const location = useLocation();
-
-  useEffect(() => {
-    setTitle(getAddressTitle(location.pathname));
-  }, [location]);
-
+function AppWrapper({ title }: { title: string | undefined }) {
   return (
     <>
       <Box sx={{ flexGrow: 1 }}>
